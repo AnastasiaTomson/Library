@@ -1,5 +1,5 @@
 from typing import List
-from datetime import date
+from datetime import date, timedelta
 from dataclasses import dataclass
 
 ''' Факультет '''
@@ -105,9 +105,27 @@ class Book:
         if self.can_get_book():
             self._reserve.add(obj)
 
+    def get_reserve_from_student(self, obj: Student):
+        objects = []
+        for reserve in self._reserve:
+            if reserve.student_id == obj.student_id:
+                objects.append(reserve)
+        return objects
+
+    def get_issue_from_student(self, obj: Student):
+        objects = []
+        for issue in self._issue:
+            if issue.student_id == obj.student_id:
+                objects.append(issue)
+        return objects
+
     def cancel_reservation(self, obj: Reserve):
         if obj in self._reserve:
             self._reserve.remove(obj)
+
+    def cancel_issue(self, obj: Issue):
+        if obj in self._issue:
+            self._issue.remove(obj)
 
     def issue(self, obj: Issue):
         if self.can_get_book():
@@ -156,3 +174,25 @@ def create_publish(publish_id: int, town: str, name: str):
 def create_book(book_id: int, amount: int, title: str, volume: str, author: Author, publish: Publish):
     book = Book(book_id, amount, title, volume, author, publish)
     return book
+
+
+def reserve_book(student: Student, books: List[Book]):
+    for book in books:
+        book.reserve(Reserve(1, date.today(), student.student_id))  # Бронирование книги
+
+
+def issue_book(student: Student, books: List[Book]):
+    for id, book in enumerate(books):
+        book.issue(Issue(id, date.today(), date.today() + timedelta(days=30), student.student_id))  # Получение книги
+        reservation_books = book.get_reserve_from_student(student)
+        for reserve in reservation_books:
+            book.cancel_reservation(reserve)
+
+
+def extension(student: Student, books: List[Book]):
+    for book in books:
+        issue_books = book.get_issue_from_student(student)
+        for issue in issue_books:
+            book.cancel_issue(issue)
+            book.issue(
+                Issue(issue.issue_id, issue.issue_date, issue.return_date + timedelta(days=14), issue.student_id))
