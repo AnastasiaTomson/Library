@@ -1,60 +1,54 @@
+import datetime
 from typing import List
 from datetime import date, timedelta
 from dataclasses import dataclass
 
-''' Факультет '''
-
 
 class Depart:
-    def __init__(self, depart_id: int, phone: str, name: str):
-        self.depart_id = depart_id
+    """ Факультет """
+
+    def __init__(self, phone: str, name: str):
         self.phone = phone  # телефон
         self.name = name  # наименование
 
     def __eq__(self, other):
         if isinstance(other, Depart):
-            return self.depart_id == other.depart_id
+            return self.name == other.name
         else:
             return False
 
 
-''' Автор '''
-
-
 class Author:
-    def __init__(self, author_id: int, fio: str):
-        self.author_id = author_id
+    """ Автор """
+
+    def __init__(self, fio: str):
         self.fio = fio  # ФИО
 
     def __eq__(self, other):
         if isinstance(other, Author):
-            return self.author_id == other.author_id
+            return self.fio == other.fio
         else:
             return False
 
 
-''' Издательство '''
-
-
 class Publish:
-    def __init__(self, publish_id: int, town: str, name: str):
-        self.publish_id = publish_id
+    """ Издательство """
+
+    def __init__(self, town: str, name: str):
         self.town = town  # город
         self.name = name  # наименование
 
     def __eq__(self, other):
         if isinstance(other, Publish):
-            return self.publish_id == other.publish_id
+            return self.town == other.town
         else:
             return False
 
 
-''' Студент '''
-
-
 class Student:
-    def __init__(self, student_id: int, num: str, fio: str, depart: Depart):
-        self.student_id = student_id
+    """ Студент """
+
+    def __init__(self, num: str, fio: str, depart: Depart):
         self.num = num  # номер зачетной книжки
         self.fio = fio  # ФИО
         self.depart = depart  # факультет
@@ -66,103 +60,62 @@ class Student:
             return False
 
 
-# Выдача
-@dataclass(frozen=True)
-class Issue:
-    issue_id: int
-    issue_date: date
-    return_date: date
-    student_id: int
-
-
-# Бронирование
-@dataclass(frozen=True)
-class Reserve:
-    reserve_id: int
-    order_date: date
-    student_id: int
-
-
-#  Книга
 class Book:
-    def __init__(self, book_id: int, amount: int, title: str, annotation: str, author: List[Author], publish: Publish):
-        self.book_id = book_id
+    """ Книга """
+
+    def __init__(self, amount: int, title: str, author: Author, publish: Publish):
         self.title = title
-        self.annotation = annotation
-        self.author = author  # автор
-        self.publish = publish  # издательство
+        self.author = author
         self._amount = amount  # кол-во экземпляров
-        self._reserve = set()  # type: Set[Reserve]
-        self._issue = set()  # type: Set[Issue]
+        self.publish = publish  # издательство
 
     def __eq__(self, other):
         if isinstance(other, Book):
-            return self.book_id == other.book_id
+            return self.title == other.title
         else:
             return False
 
-    def reserve(self, obj: Reserve):
-        if self.can_get_book():
-            self._reserve.add(obj)
 
-    def get_reserve_from_student(self, obj: Student):
-        objects = []
-        for reserve in self._reserve:
-            if reserve.student_id == obj.student_id:
-                objects.append(reserve)
-        return objects
+class Reserve:
+    """ Резервирование """
 
-    def get_issue_from_student(self, obj: Student):
-        objects = []
-        for issue in self._issue:
-            if issue.student_id == obj.student_id:
-                objects.append(issue)
-        return objects
+    def __init__(self, student: int):
+        self.student = student
+        self.date_reserve = datetime.datetime.today()  # кол-во экземпляров
 
-    def cancel_reservation(self, obj: Reserve):
-        if obj in self._reserve:
-            self._reserve.remove(obj)
-
-    def cancel_issue(self, obj: Issue):
-        if obj in self._issue:
-            self._issue.remove(obj)
-
-    def issue(self, obj: Issue):
-        if self.can_get_book():
-            self._issue.add(obj)
-            for r in self._reserve:
-                if r.student_id == obj.student_id and r.order_date == obj.issue_date:
-                    self.cancel_reservation(r)
-                    break
-
-    def remove_issue(self, obj: Issue):
-        if obj in self._issue:
-            self._issue.remove(obj)
-
-    @property
-    def allocated_quantity(self) -> int:
-        return len(self._reserve) + len(self._issue)
-
-    @property
-    def available_quantity(self) -> int:
-        return self._amount - self.allocated_quantity
-
-    def can_get_book(self) -> bool:
-        return self._amount - self.allocated_quantity >= 1
+    def __eq__(self, other):
+        if isinstance(other, Reserve):
+            return self.title == other.title
+        else:
+            return False
 
 
-def create_student(student_id: int, num: str, fio: str, depart: Depart):
-    student = Student(student_id, num, fio, depart)
+class ReserveBook:
+    """ Книги в резерве """
+
+    def __init__(self, book: Book, reserve: Reserve):
+        self.book = book
+        self.reserve = reserve
+
+    def __eq__(self, other):
+        if isinstance(other, ReserveBook):
+            return self.book == other.book and self.reserve == other.reserve
+        else:
+            return False
+
+
+def create_student(num: str, fio: str, depart: Depart):
+    student = Student(num, fio, depart)
     return student
 
 
-def create_depart(depart_id: int, name: str, phone: str):
-    depart = Depart(depart_id, phone, name)
+def create_depart(name: str, phone: str):
+    depart = Depart(phone, name)
     return depart
 
 
-def create_author(author_id: int, fio: str):
-    author = Author(author_id, fio)
+def create_author(fio: str):
+    author = Author(fio)
     return author
 
 
